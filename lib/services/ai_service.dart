@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'database_service.dart';
 
@@ -5,7 +6,7 @@ class AIService {
   final DatabaseService _dbService;
   final GenerativeModel _model;
 
-  static const String _apiKey = 'AIzaSyCi3hL4gvxSdXjvd8xq4lxYRVX7_gWkd4g';
+  static final _apiKey = dotenv.env['GEMINI_API_KEY']!;
 
   AIService(this._dbService)
     : _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);

@@ -1,14 +1,16 @@
 // Core Flutter imports and feature-specific imports
 import 'package:budget_managing/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:budget_managing/theme_provider.dart';
 import 'features/splash/presentation/splash_screen.dart';
 
 // Entry point of the application
 // Initializes Flutter bindings and sets up the theme provider
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: "assets/.env");
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),

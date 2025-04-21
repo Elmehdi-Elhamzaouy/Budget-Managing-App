@@ -4,8 +4,15 @@ import 'package:flutter/material.dart';
 
 class AISuggestionsCard extends StatelessWidget {
   final String insight;
+  final VoidCallback onRefresh;
+  final bool isLoading;
 
-  const AISuggestionsCard({super.key, required this.insight});
+  const AISuggestionsCard({
+    super.key,
+    required this.insight,
+    required this.onRefresh,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +146,17 @@ class AISuggestionsCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.refresh,
+                    size: 16,
+                    color:
+                        isDarkMode
+                            ? Colors.blue.shade200
+                            : Colors.blue.shade400,
+                  ),
+                  onPressed: onRefresh, // Add this parameter to your widget
+                ),
                 Icon(
                   Icons.auto_awesome,
                   size: 16,

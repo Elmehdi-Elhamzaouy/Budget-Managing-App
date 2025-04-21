@@ -48,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // AI service for spending analysis
   final _aiService = AIService(DatabaseService());
   String _aiInsights = '';
+  bool _isLoadingAI = false;
 
   @override
   void initState() {
@@ -65,11 +66,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Loads AI-generated spending insights
   Future<void> _loadAIData() async {
+    if (mounted) setState(() => _isLoadingAI = true);
     try {
       final insight = await _aiService.analyzeSpending();
-      setState(() => _aiInsights = insight); // No type casting needed
+      if (mounted) {
+        setState(() {
+          _aiInsights = insight;
+          _isLoadingAI = false;
+        });
+      }
     } catch (e) {
-      setState(() => _aiInsights = 'Could not load financial insights');
+      if (mounted) {
+        setState(() {
+          _aiInsights = 'Could not refresh insights: ${e.toString()}';
+          _isLoadingAI = false;
+        });
+      }
     }
   }
 
@@ -169,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _dbService.insertTransaction(transaction);
     await _loadTransactions();
     await _loadFinancialTotals();
+    await _loadAIData();
 
     _amountController.clear();
     _notesController.clear();
@@ -181,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _dbService.deleteTransaction(id);
     await _loadTransactions();
     await _loadFinancialTotals();
+    await _loadAIData();
   }
 
   @override
@@ -273,7 +287,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              AISuggestionsCard(insight: _aiInsights),
+              AISuggestionsCard(
+                insight:
+                    _isLoadingAI
+                        ? 'Analyzing spending patterns...'
+                        : _aiInsights,
+                onRefresh: _loadAIData,
+                isLoading: _isLoadingAI,
+              ),
               // Recent Transactions
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -653,9 +674,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder:
           (context) => AllTransactionsDialog(
-            transactions: _transactions,
+            getTransactions: () => _transactions, // Pass current transactions
             categories: _categories,
-            onDelete: _deleteTransaction,
+            onDelete: (int id) async {
+              await _deleteTransaction(id);
+            },
           ),
     );
   }
