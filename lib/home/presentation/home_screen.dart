@@ -3,6 +3,7 @@
 import 'package:budget_managing/helpers/extensions.dart';
 import 'package:budget_managing/home/presentation/widgets/ai_suggestions_card.dart';
 import 'package:budget_managing/services/ai_service.dart';
+import 'package:budget_managing/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +15,8 @@ import '../../services/pdf_service.dart';
 import 'widgets/expense_pie_chart.dart';
 import 'widgets/transaction_list.dart';
 import '../dialogs/all_transactions.dart';
+import 'package:provider/provider.dart';
+import 'package:budget_managing/currencies.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,9 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Loads AI-generated spending insights
   Future<void> _loadAIData() async {
+    final currencySymbol =
+        currencies[Provider.of<ThemeProvider>(
+          context,
+          listen: false,
+        ).currency]!['symbol']!;
     if (mounted) setState(() => _isLoadingAI = true);
     try {
-      final insight = await _aiService.analyzeSpending();
+      final insight = await _aiService.analyzeSpending(currencySymbol);
       if (mounted) {
         setState(() {
           _aiInsights = insight;
@@ -336,8 +344,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Creates a summary card for displaying financial totals
   Widget _buildSummaryCard(String title, double amount, IconData icon) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final currencySymbol = currencies[themeProvider.currency]!['symbol']!;
+
     return Container(
-      width: 110,
+      width: 115,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -368,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '\$${amount.toStringAsFixed(2)}',
+            '$currencySymbol ${amount.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSurface,
@@ -402,6 +413,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Shows dialog for adding new transaction
   void _showTransactionForm(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final currencySymbol = currencies[themeProvider.currency]!['symbol']!;
     showDialog(
       context: context,
       builder:
@@ -440,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             controller: _amountController,
                             decoration: InputDecoration(
                               labelText: 'Amount',
-                              prefixText: '\$ ',
+                              prefixText: '$currencySymbol ',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

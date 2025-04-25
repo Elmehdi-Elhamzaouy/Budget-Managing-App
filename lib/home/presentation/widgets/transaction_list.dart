@@ -1,5 +1,8 @@
+import 'package:budget_managing/currencies.dart';
+import 'package:budget_managing/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class TransactionList extends StatelessWidget {
   final List<Map<String, dynamic>> transactions;
@@ -15,6 +18,8 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final currencySymbol = currencies[themeProvider.currency]!['symbol']!;
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -71,7 +76,7 @@ class TransactionList extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '\$${transaction['amount'].toStringAsFixed(2)}',
+                      '$currencySymbol ${transaction['amount'].toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:intl/intl.dart';
 import 'database_service.dart';
 
 class AIService {
@@ -11,23 +12,36 @@ class AIService {
   AIService(this._dbService)
     : _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
 
-  Future<String> analyzeSpending() async {
+  Future<String> analyzeSpending(String currencySymbol) async {
+    
     try {
       final transactions = await _dbService.getTransactions();
+      final categories = await _dbService.getCategories();
 
-      // Calculate totals
+      // Calculate totals with proper formatting
       double totalIncome = 0;
       double totalExpenses = 0;
       final List<String> transactionsList = [];
 
       for (final t in transactions) {
-        if (t['type'] == 'income') {
+        final category = categories.firstWhere(
+          (c) => c['id'] == t['category_id'],
+          orElse: () => {'name': 'Unknown'},
+        );
+        
+        final amount = (t['amount'] as double).toStringAsFixed(2);
+        final type = t['type'] as String;
+        
+        if (type == 'income') {
           totalIncome += t['amount'];
         } else {
           totalExpenses += t['amount'];
         }
+        
         transactionsList.add(
-          '${t['date']} - ${t['category']}: \$${t['amount']} (${t['type']})',
+          '${DateFormat('MMM dd').format(DateTime.parse(t['date']))} - '
+          '${category['name']}: '
+          '$currencySymbol$amount ($type)'
         );
       }
 
@@ -35,8 +49,8 @@ class AIService {
       Analyze these financial transactions:
       ${transactionsList.join('\n')}
 
-      Total Income: \$$totalIncome
-      Total Expenses: \$$totalExpenses
+      Total Income: $currencySymbol ${totalIncome.toStringAsFixed(2)}
+      Total Expenses: $currencySymbol ${totalExpenses.toStringAsFixed(2)}
 
       Provide a concise, friendly financial summary focusing on:
       1. Whether income exceeds expenses
@@ -44,7 +58,7 @@ class AIService {
       3. One positive reinforcement
 
       Keep it under 3 sentences and avoid technical terms.
-      Example: "Great news! Your income exceeded expenses this month by \$X. 
+      Example: "Great news! Your income exceeded expenses this month by $currencySymbol X. 
       Consider saving 20% of the difference. Keep up the good financial habits!"
       ''';
 
