@@ -1,12 +1,13 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
-import 'package:budget_managing/helpers/extensions.dart';
+import 'package:budget_managing/app_localizations.dart';
 import 'package:budget_managing/home/presentation/widgets/ai_suggestions_card.dart';
+import 'package:budget_managing/home/presentation/widgets/summary_card.dart';
+import 'package:budget_managing/home/presentation/widgets/transaction_form_dialog.dart';
 import 'package:budget_managing/services/ai_service.dart';
 import 'package:budget_managing/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -37,11 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // State variables for transactions and categories
   List<Map<String, dynamic>> _transactions = [];
   List<Map<String, dynamic>> _categories = [];
-
-  // Transaction form state
-  DateTime _selectedDate = DateTime.now();
-  String _selectedType = 'expense';
-  int? _selectedCategoryId;
 
   // Financial summary variables
   double _totalBalance = 0.0;
@@ -76,7 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ).currency]!['symbol']!;
     if (mounted) setState(() => _isLoadingAI = true);
     try {
-      final insight = await _aiService.analyzeSpending(currencySymbol);
+      final insight = await _aiService.analyzeSpending(
+        currencySymbol,
+        AppLocalizations.of(context)!.translations['aiLanguage']!,
+      );
       if (mounted) {
         setState(() {
           _aiInsights = insight;
@@ -125,10 +124,22 @@ class _HomeScreenState extends State<HomeScreen> {
   // Creates default categories for first-time app usage
   Future<void> _initializeDefaultCategories() async {
     final defaultCategories = [
-      {'name': 'Food', 'icon_code_point': Icons.fastfood.codePoint},
-      {'name': 'Transport', 'icon_code_point': Icons.directions_car.codePoint},
-      {'name': 'Shopping', 'icon_code_point': Icons.shopping_cart.codePoint},
-      {'name': 'Salary', 'icon_code_point': Icons.attach_money.codePoint},
+      {
+        'name': AppLocalizations.of(context)!.translations['Food']!,
+        'icon_code_point': Icons.fastfood.codePoint,
+      },
+      {
+        'name': AppLocalizations.of(context)!.translations['Transport']!,
+        'icon_code_point': Icons.directions_car.codePoint,
+      },
+      {
+        'name': AppLocalizations.of(context)!.translations['Shopping']!,
+        'icon_code_point': Icons.shopping_cart.codePoint,
+      },
+      {
+        'name': AppLocalizations.of(context)!.translations['Salary']!,
+        'icon_code_point': Icons.attach_money.codePoint,
+      },
     ];
     for (final category in defaultCategories) {
       await _dbService.insertCategory(category);
@@ -174,29 +185,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Creates new transaction from form data
-  Future<void> _addTransaction() async {
-    if (_amountController.text.isEmpty || _selectedCategoryId == null) return;
-
-    final transaction = {
-      'amount': double.parse(_amountController.text),
-      'type': _selectedType,
-      'category_id': _selectedCategoryId,
-      'date': _selectedDate.toIso8601String(),
-      'notes': _notesController.text.trim(),
-    };
-
-    await _dbService.insertTransaction(transaction);
-    await _loadTransactions();
-    await _loadFinancialTotals();
-    await _loadAIData();
-
-    _amountController.clear();
-    _notesController.clear();
-    _selectedDate = DateTime.now();
-    _selectedCategoryId = null;
-  }
-
   // Removes transaction and updates totals
   Future<void> _deleteTransaction(int id) async {
     await _dbService.deleteTransaction(id);
@@ -217,9 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Budget Manager',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          AppLocalizations.of(context)!.translations['Budget Manager']!,
+          style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.blue.shade700,
@@ -245,20 +233,29 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSummaryCard(
-                    'Total Balance',
-                    _totalBalance,
-                    Icons.account_balance_wallet,
+                  SummaryCard(
+                    title:
+                        AppLocalizations.of(
+                          context,
+                        )!.translations['Total Balance']!,
+                    amount: _totalBalance,
+                    icon: Icons.account_balance_wallet,
                   ),
-                  _buildSummaryCard(
-                    'Total Income',
-                    _totalIncome,
-                    Icons.arrow_upward,
+                  SummaryCard(
+                    title:
+                        AppLocalizations.of(
+                          context,
+                        )!.translations['Total Income']!,
+                    amount: _totalIncome,
+                    icon: Icons.arrow_upward,
                   ),
-                  _buildSummaryCard(
-                    'Total Expenses',
-                    _totalExpenses,
-                    Icons.arrow_downward,
+                  SummaryCard(
+                    title:
+                        AppLocalizations.of(
+                          context,
+                        )!.translations['Total Expenses']!,
+                    amount: _totalExpenses,
+                    icon: Icons.arrow_downward,
                   ),
                 ],
               ),
@@ -269,7 +266,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: _buildActionButton(
-                      'Add Transaction',
+                      AppLocalizations.of(
+                        context,
+                      )!.translations['Add Transaction']!,
                       Icons.add,
                       () => _showTransactionForm(context),
                     ),
@@ -277,7 +276,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionButton(
-                      'Generate Report',
+                      AppLocalizations.of(
+                        context,
+                      )!.translations['Generate Report']!,
                       Icons.picture_as_pdf,
                       _generateAndSharePdf,
                     ),
@@ -298,7 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
               AISuggestionsCard(
                 insight:
                     _isLoadingAI
-                        ? 'Analyzing spending patterns...'
+                        ? AppLocalizations.of(
+                          context,
+                        )!.translations['Analyzing spending patterns...']!
                         : _aiInsights,
                 onRefresh: _loadAIData,
                 isLoading: _isLoadingAI,
@@ -308,7 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Recent Transactions',
+                    AppLocalizations.of(
+                      context,
+                    )!.translations['Recent Transactions']!,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -317,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   TextButton(
                     onPressed: () => _showAllTransactionsDialog(context),
                     child: Text(
-                      'View All',
+                      AppLocalizations.of(context)!.translations['View All']!,
                       style: TextStyle(
                         color: Colors.blue.shade700,
                         fontWeight: FontWeight.w500,
@@ -333,59 +338,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   transactions: _transactions,
                   categories: _categories,
                   onDelete: _deleteTransaction,
+                  onTransactionUpdated: () async {
+                    await _loadTransactions();
+                    await _loadFinancialTotals();
+                  },
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Creates a summary card for displaying financial totals
-  Widget _buildSummaryCard(String title, double amount, IconData icon) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final currencySymbol = currencies[themeProvider.currency]!['symbol']!;
-
-    return Container(
-      width: 115,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withOpacity(0.4)
-                    : Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$currencySymbol ${amount.toStringAsFixed(2)}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -403,7 +364,9 @@ class _HomeScreenState extends State<HomeScreen> {
       label: Text(text, style: TextStyle(color: colorScheme.onPrimary)),
       style: ElevatedButton.styleFrom(
         backgroundColor:
-            text.contains('Add') ? colorScheme.primary : colorScheme.secondary,
+            text.contains(RegExp(r'Add|Ajouter'))
+                ? colorScheme.primary
+                : colorScheme.secondary,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -413,270 +376,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Shows dialog for adding new transaction
   void _showTransactionForm(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final currencySymbol = currencies[themeProvider.currency]!['symbol']!;
     showDialog(
       context: context,
       builder:
-          (context) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            insetPadding: EdgeInsets.zero,
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppBar(
-                    title: Text(
-                      'Add ${_selectedType.capitalize()}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    centerTitle: true,
-                    backgroundColor: Colors.blue.shade700,
-                    automaticallyImplyLeading: false,
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Form(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextFormField(
-                            controller: _amountController,
-                            decoration: InputDecoration(
-                              labelText: 'Amount',
-                              prefixText: '$currencySymbol ',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              labelStyle: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _selectedType,
-                            decoration: InputDecoration(
-                              labelText: 'Type',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                            items:
-                                ['expense', 'income'].map((type) {
-                                  return DropdownMenuItem<String>(
-                                    value: type,
-                                    child: Text(
-                                      type.capitalize(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                (value) =>
-                                    setState(() => _selectedType = value!),
-                          ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<int>(
-                            value: _selectedCategoryId,
-                            decoration: InputDecoration(
-                              labelText: 'Category',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                            items:
-                                _categories.map((category) {
-                                  return DropdownMenuItem<int>(
-                                    value: category['id'] as int,
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          IconData(
-                                            category['icon_code_point'],
-                                            fontFamily: 'MaterialIcons',
-                                          ),
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          category['name'],
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                (value) =>
-                                    setState(() => _selectedCategoryId = value),
-                          ),
-                          const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _selectedDate,
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime.now(),
-                              );
-                              if (date != null) {
-                                setState(() => _selectedDate = date);
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(color: Colors.blue.shade700),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.calendar_today),
-                                const SizedBox(width: 8),
-                                Text(
-                                  DateFormat.yMd().format(_selectedDate),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _notesController,
-                            decoration: InputDecoration(
-                              labelText: 'Notes',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              labelStyle: TextStyle(
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            maxLines: 2,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    side: BorderSide(
-                                      color: Colors.blue.shade700,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: Colors.blue.shade700,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    _addTransaction();
-                                    Navigator.pop(context);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue.shade700,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Add',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).viewInsets.bottom,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          (context) => TransactionFormDialog(
+            categories: _categories,
+            onSave: (transactionData) async {
+              await _dbService.insertTransaction(transactionData);
+              await _loadTransactions();
+              await _loadFinancialTotals();
+              await _loadAIData();
+            },
           ),
     );
   }
@@ -691,6 +401,10 @@ class _HomeScreenState extends State<HomeScreen> {
             categories: _categories,
             onDelete: (int id) async {
               await _deleteTransaction(id);
+            },
+            onTransactionUpdated: () async {
+              await _loadTransactions();
+              await _loadFinancialTotals();
             },
           ),
     );

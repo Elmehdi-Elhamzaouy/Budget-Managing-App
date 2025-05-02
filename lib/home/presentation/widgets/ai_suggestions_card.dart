@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:budget_managing/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class AISuggestionsCard extends StatelessWidget {
@@ -91,7 +92,7 @@ class AISuggestionsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Smart Financial Tip',
+                        AppLocalizations.of(context)!.translations['Smart Financial Tip']!,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color:
@@ -165,7 +166,7 @@ class AISuggestionsCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Powered by AI Gemini',
+                  AppLocalizations.of(context)!.translations['Powered by AI Gemini']!,
                   style: TextStyle(
                     color:
                         isDarkMode

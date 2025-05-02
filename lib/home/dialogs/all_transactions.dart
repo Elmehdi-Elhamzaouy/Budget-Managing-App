@@ -1,4 +1,6 @@
+import 'package:budget_managing/app_localizations.dart';
 import 'package:budget_managing/currencies.dart';
+import 'package:budget_managing/home/presentation/update_transaction.dart';
 import 'package:budget_managing/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,12 +10,14 @@ class AllTransactionsDialog extends StatelessWidget {
   final List<Map<String, dynamic>> Function() getTransactions;
   final List<Map<String, dynamic>> categories;
   final Function(int) onDelete;
+  final VoidCallback onTransactionUpdated;
 
   const AllTransactionsDialog({
     super.key,
     required this.getTransactions,
     required this.categories,
     required this.onDelete,
+    required this.onTransactionUpdated,
   });
 
   @override
@@ -38,8 +42,10 @@ class AllTransactionsDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppBar(
-                  title: const Text(
-                    'All Transactions',
+                  title: Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.translations['All Transactions']!,
                     style: TextStyle(color: Colors.white),
                   ),
                   centerTitle: true,
@@ -78,6 +84,11 @@ class AllTransactionsDialog extends StatelessWidget {
                               side: BorderSide(color: Colors.grey.shade200),
                             ),
                             child: ListTile(
+                              onTap:
+                                  () => _navigateToUpdateScreen(
+                                    context,
+                                    transaction,
+                                  ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 12,
@@ -164,5 +175,21 @@ class AllTransactionsDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _navigateToUpdateScreen(
+    BuildContext context,
+    Map<String, dynamic> transaction,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => UpdateTransactionScreen(
+              transaction: transaction,
+              categories: categories,
+            ),
+      ),
+    ).then((_) => onTransactionUpdated()); // Update this line
   }
 }

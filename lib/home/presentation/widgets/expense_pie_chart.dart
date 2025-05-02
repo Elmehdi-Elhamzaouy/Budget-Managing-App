@@ -1,3 +1,4 @@
+import 'package:budget_managing/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -57,7 +58,7 @@ class ExpensePieChart extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    'Spending Breakdown',
+                    AppLocalizations.of(context)!.translations['Spending Breakdown']!,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,

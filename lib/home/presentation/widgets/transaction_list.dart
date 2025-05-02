@@ -1,4 +1,5 @@
 import 'package:budget_managing/currencies.dart';
+import 'package:budget_managing/home/presentation/update_transaction.dart';
 import 'package:budget_managing/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,12 +9,14 @@ class TransactionList extends StatelessWidget {
   final List<Map<String, dynamic>> transactions;
   final List<Map<String, dynamic>> categories;
   final Function(int) onDelete;
+  final VoidCallback onTransactionUpdated;
 
   const TransactionList({
     super.key,
     required this.transactions,
     required this.categories,
     required this.onDelete,
+    required this.onTransactionUpdated,
   });
 
   @override
@@ -43,6 +46,7 @@ class TransactionList extends StatelessWidget {
             side: BorderSide(color: Colors.grey.shade200),
           ),
           child: ListTile(
+            onTap: () => _navigateToUpdateScreen(context, transaction),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 8,
@@ -102,5 +106,21 @@ class TransactionList extends StatelessWidget {
         );
       },
     );
+  }
+
+  // In TransactionList widget
+  void _navigateToUpdateScreen(
+    BuildContext context, 
+    Map<String, dynamic> transaction
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateTransactionScreen(
+          transaction: transaction,
+          categories: categories,
+        ),
+      ),
+    ).then((_) => onTransactionUpdated()); // Update this line
   }
 }

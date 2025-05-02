@@ -1,51 +1,54 @@
-// Core Flutter imports and feature-specific imports
-import 'package:budget_managing/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:budget_managing/app_localizations.dart';
+import 'package:budget_managing/language_provider.dart';
 import 'package:budget_managing/theme_provider.dart';
 import 'features/splash/presentation/splash_screen.dart';
+import 'features/settings/presentation/settings_screen.dart';
 
-// Entry point of the application
-// Initializes Flutter bindings and sets up the theme provider
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+      ],
       child: const MyApp(),
     ),
   );
 }
 
-// Root widget of the application
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Listens to theme changes using Consumer widget
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Budget Manager',
-          // Theme configuration
-          theme: _buildLightTheme(),
-          darkTheme: _buildDarkTheme(),
-          themeMode: themeProvider.themeMode,
-          // Initial route
-          home: const SplashScreen(),
-          // Named routes for navigation
-          routes: {'/settings': (context) => const SettingsScreen()},
-        );
-      },
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Budget Manager',
+      theme: _buildLightTheme(),
+      darkTheme: _buildDarkTheme(),
+      themeMode: themeProvider.themeMode,
+      locale: languageProvider.locale,
+      supportedLocales: const [Locale('en', 'US'), Locale('fr', 'FR')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate, // Your custom delegate
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const SplashScreen(),
+      routes: {'/settings': (context) => const SettingsScreen()},
     );
   }
 
-  // Defines the light theme configuration
-  // Customizes colors, text styles, and component themes for light mode
   ThemeData _buildLightTheme() {
     return ThemeData.light().copyWith(
       colorScheme: ColorScheme.light(
@@ -63,9 +66,7 @@ class MyApp extends StatelessWidget {
       cardTheme: CardTheme(
         color: Colors.white,
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ), // Fixed closing brackets
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       textTheme: const TextTheme().copyWith(
         bodyLarge: TextStyle(color: Colors.grey.shade800),
@@ -95,11 +96,9 @@ class MyApp extends StatelessWidget {
           vertical: 14,
         ),
       ),
-    ); // Added closing bracket
+    );
   }
 
-  // Defines the dark theme configuration
-  // Customizes colors, text styles, and component themes for dark mode
   ThemeData _buildDarkTheme() {
     return ThemeData.dark().copyWith(
       colorScheme: ColorScheme.dark(

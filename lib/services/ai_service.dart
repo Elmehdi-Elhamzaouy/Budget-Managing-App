@@ -12,8 +12,10 @@ class AIService {
   AIService(this._dbService)
     : _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
 
-  Future<String> analyzeSpending(String currencySymbol) async {
-    
+  Future<String> analyzeSpending(
+    String currencySymbol,
+    String aiLanguage
+  ) async {
     try {
       final transactions = await _dbService.getTransactions();
       final categories = await _dbService.getCategories();
@@ -28,20 +30,20 @@ class AIService {
           (c) => c['id'] == t['category_id'],
           orElse: () => {'name': 'Unknown'},
         );
-        
+
         final amount = (t['amount'] as double).toStringAsFixed(2);
         final type = t['type'] as String;
-        
+
         if (type == 'income') {
           totalIncome += t['amount'];
         } else {
           totalExpenses += t['amount'];
         }
-        
+
         transactionsList.add(
           '${DateFormat('MMM dd').format(DateTime.parse(t['date']))} - '
           '${category['name']}: '
-          '$currencySymbol$amount ($type)'
+          '$currencySymbol$amount ($type)',
         );
       }
 
@@ -59,7 +61,7 @@ class AIService {
 
       Keep it under 3 sentences and avoid technical terms.
       Example: "Great news! Your income exceeded expenses this month by $currencySymbol X. 
-      Consider saving 20% of the difference. Keep up the good financial habits!"
+      Consider saving 20% of the difference. Keep up the good financial habits! Give the answer in $aiLanguage."
       ''';
 
       final response = await _model.generateContent([Content.text(prompt)]);
